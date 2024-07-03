@@ -218,11 +218,6 @@ resource "aws_sns_topic_subscription" "sns_subscription" {
 
 1. Abre una terminal en tu entorno Cloud9.
 2. Navega al directorio de tu proyecto.
-
-```sh
-cd my-portfolio
-```
-
 3. Inicializa Terraform.
 
 ```sh

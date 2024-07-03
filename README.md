@@ -157,15 +157,10 @@ provider "aws" {
   region = var.aws_region
 }
 
-resource "aws_key_pair" "deployer" {
-  key_name   = "vockey"  # Nombre único para el par de claves SSH
-  public_key = file("${path.module}/clave.pem")
-}
-
 resource "aws_instance" "web" {
-  ami           = "ami-0c55b159cbfafe1f0"  # AMI de Amazon Linux 2
+  ami           = "ami-01b799c439fd5516a"  # AMI de Amazon Linux 2
   instance_type = var.instance_type
-  key_name      = aws_key_pair.deployer.key_name
+  key_name      = "vockey"
 
   user_data = file("${path.module}/userdata.sh")
 
@@ -216,7 +211,7 @@ resource "aws_sns_topic" "sns_topic" {
 resource "aws_sns_topic_subscription" "sns_subscription" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "email"
-  endpoint  = "geovanny.piedra@tajamar365.com"  # Reemplaza con tu dirección de correo electrónico
+  endpoint  = "geovanny.piedra@tajamar365.com"  # Reemplaza con tu dirección de email
 }
 
 output "instance_public_ip" {

@@ -43,19 +43,15 @@ Define las variables necesarias para tu configuración de Terraform.
 
 ```hcl
 variable "aws_region" {
-  description = "AWS region to deploy resources"
-  default     = "us-east-1"
-}
-
-variable "key_pair_name" {
-  description = "Name of the SSH key pair"
-  default     = "my-key-pair"
+  description = "AWS region where resources will be deployed"
+  default     = "us-east-1"  # Cambia esto a tu región preferida
 }
 
 variable "instance_type" {
-  description = "EC2 instance type"
-  default     = "t2.micro"
+  description = "EC2 instance type for the web server"
+  default     = "t2.micro"  # Cambia esto al tipo de instancia deseado
 }
+
 ```
 
 ### `outputs.tf`
@@ -162,7 +158,7 @@ provider "aws" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = var.key_pair_name
+  key_name   = "vockey"  # Nombre único para el par de claves SSH
   public_key = file("${path.module}/clave.pem")
 }
 
@@ -177,13 +173,20 @@ resource "aws_instance" "web" {
     Name = "PortafolioWebServer"
   }
 
+  connection {
+    type        = "ssh"
+    user        = "ec2-user"
+    private_key = file("${path.module}/clave.pem")
+    host        = self.public_ip
+  }
+
   security_groups = [aws_security_group.web_sg.name]
 }
 
 resource "aws_security_group" "web_sg" {
-  name        = "web_sg"
-  description = "Allow HTTP and SSH"
-  
+  name        = "web_sg_unique"  # Nombre único para el grupo de seguridad
+  description = "Allow HTTP and SSH traffic"
+
   ingress {
     from_port   = 22
     to_port     = 22
@@ -213,8 +216,13 @@ resource "aws_sns_topic" "sns_topic" {
 resource "aws_sns_topic_subscription" "sns_subscription" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "email"
-  endpoint  = "tu_email@example.com"  # Reemplaza con tu dirección de email
+  endpoint  = "geovanny.piedra@tajamar365.com"  # Reemplaza con tu dirección de correo electrónico
 }
+
+output "instance_public_ip" {
+  value = aws_instance.web.public_ip
+}
+
 ```
 
 ### Desplegar con Terraform

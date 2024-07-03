@@ -36,7 +36,8 @@ my-portfolio
 └── userdata.sh
 ```
 
-### Archivo `variables.tf`
+
+### `variables.tf`
 
 Define las variables necesarias para tu configuración de Terraform.
 
@@ -48,7 +49,7 @@ variable "aws_region" {
 
 variable "key_pair_name" {
   description = "Name of the SSH key pair"
-  type        = string
+  default     = "my-key-pair"
 }
 
 variable "instance_type" {
@@ -57,7 +58,7 @@ variable "instance_type" {
 }
 ```
 
-### Archivo `outputs.tf`
+### `outputs.tf`
 
 Define los outputs para obtener información después de la ejecución de Terraform.
 
@@ -68,7 +69,7 @@ output "ec2_instance_public_ip" {
 }
 ```
 
-### Archivo `userdata.sh`
+### `userdata.sh`
 
 Este script se ejecutará al inicio de la instancia EC2 para instalar Apache, PHP y configurar el servidor.
 
@@ -151,7 +152,7 @@ EOL
 service httpd restart
 ```
 
-### Archivo `main.tf`
+### `main.tf`
 
 Define los recursos de AWS para tu configuración.
 
@@ -162,7 +163,7 @@ provider "aws" {
 
 resource "aws_key_pair" "deployer" {
   key_name   = var.key_pair_name
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = file("${path.module}/clave.pem")
 }
 
 resource "aws_instance" "web" {
@@ -170,34 +171,38 @@ resource "aws_instance" "web" {
   instance_type = var.instance_type
   key_name      = aws_key_pair.deployer.key_name
 
-  user_data = file("userdata.sh")
+  user_data = file("${path.module}/userdata.sh")
 
   tags = {
     Name = "PortafolioWebServer"
   }
 
-  security_group {
-    description = "Allow HTTP and SSH"
-    ingress {
-      from_port   = 22
-      to_port     = 22
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
+  security_groups = [aws_security_group.web_sg.name]
+}
 
-    ingress {
-      from_port   = 80
-      to_port     = 80
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
+resource "aws_security_group" "web_sg" {
+  name        = "web_sg"
+  description = "Allow HTTP and SSH"
+  
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-    egress {
-      from_port   = 0
-      to_port     = 0
-      protocol    = "-1"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
@@ -212,12 +217,17 @@ resource "aws_sns_topic_subscription" "sns_subscription" {
 }
 ```
 
-## Desplegar con Terraform
+### Desplegar con Terraform
 
 ### Paso 1: Inicializar Terraform
 
 1. Abre una terminal en tu entorno Cloud9.
 2. Navega al directorio de tu proyecto.
+
+```sh
+cd ~/environment/TERRA
+```
+
 3. Inicializa Terraform.
 
 ```sh
@@ -245,3 +255,10 @@ terraform apply
 1. Obtén la dirección IP pública de la instancia EC2 desde la salida de Terraform o desde la consola de AWS.
 2. Abre un navegador web y navega a la dirección IP pública de tu instancia EC2.
 3. Deberías ver el formulario HTML. Completa y envía el formulario para probar la funcionalidad.
+
+### Notas Adicionales
+
+- Asegúrate de reemplazar las variables necesarias, como el ARN del SNS y la dirección de email en el script PHP y la configuración de Terraform.
+- Puedes agregar más configuraciones y servicios según sea necesario, siguiendo la misma estructura de archivos y pasos detallados aquí.
+
+Siguiendo estos pasos, deberías poder desplegar tu proyecto de portafolio personal en AWS utilizando Terraform en un entorno Cloud9.
